@@ -78,6 +78,9 @@ mod virtio;
 #[cfg(feature = "ixgbe")]
 mod ixgbe;
 
+#[cfg(feature = "e1000")]
+mod e1000;
+
 pub mod prelude;
 
 #[allow(unused_imports)]

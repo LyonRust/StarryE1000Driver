@@ -93,6 +93,8 @@ cfg_if::cfg_if! {
                     bdf: driver_pci::DeviceFunction,
                     dev_info: &driver_pci::DeviceFunctionInfo,
                 ) -> Option<crate::AxDeviceEnum> {
+                    info!("=====dev_info.vendor_id: {}", dev_info.vendor_id);
+                    info!("=====dev_info.device_id: {}", dev_info.device_id);
                     use crate::ixgbe::IxgbeHalImpl;
                     use driver_net::ixgbe::{INTEL_82599, INTEL_VEND, IxgbeNic};
                     if dev_info.vendor_id == INTEL_VEND && dev_info.device_id == INTEL_82599 {
@@ -124,6 +126,56 @@ cfg_if::cfg_if! {
                         }
                     }
                     None
+            }
+        }
+    }
+}
+
+cfg_if::cfg_if! {
+    if #[cfg(net_dev = "e1000")] {
+        use crate::e1000::E1000HalImpl;
+        use axhal::mem::phys_to_virt;
+        use driver_net::e1000::E1000Nic;
+        pub struct E1000Driver;
+
+        register_net_driver!(E1000Driver, E1000Nic<'static, E1000HalImpl>);
+
+        impl DriverProbe for E1000Driver {
+            fn probe_pci(
+                root: &mut driver_pci::PciRoot,
+                bdf: driver_pci::DeviceFunction,
+                dev_info: &driver_pci::DeviceFunctionInfo,
+            ) -> Option<crate::AxDeviceEnum> {
+                
+                const E1000_VENDOR_ID: u16 = 0x8086;
+                const E1000_DEVICE_ID: u16 = 0x100e;
+                if dev_info.vendor_id == E1000_VENDOR_ID && dev_info.device_id == E1000_DEVICE_ID {
+                    info!("E1000 PCI device found at {:?}", bdf);
+
+                    // Initialize the device
+                    match root.bar_info(bdf, 0).unwrap() {
+                        driver_pci::BarInfo::Memory {
+                            address,
+                            ..
+                        } => {
+                            let kfn = E1000HalImpl;
+                            // panic!("arrived");
+                            let nic = E1000Nic::<E1000HalImpl>::init(kfn, phys_to_virt((address as usize).into()).into()).expect("failed to initialize e1000 device");
+                            // let nic = E1000Nic::<E1000HalImpl>::init(
+                            //     kfn,
+                            //     address as usize
+                            // )
+                            // .expect("failed to initialize e1000 device");
+                            Some(AxDeviceEnum::from_net(nic))
+                        }
+                        driver_pci::BarInfo::IO { .. } => {
+                            error!("e1000: BAR0 is of I/O type");
+                            None
+                        }
+                    }
+                } else {
+                    None
+                }
             }
         }
     }

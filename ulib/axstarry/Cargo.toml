@@ -40,6 +40,10 @@ display = ["arceos_api/display", "axfeat/display"]
 # Bus-Pci
 bus-pci = ["axfeat/bus-pci"]
 
+# E1000
+e1000_net = ["axfeat/driver-e1000"]
+# e1000_net = []
+
 # Fs
 fd = []
 fs = ["axruntime/fs", "arceos_api/fs", "fd"]
@@ -54,7 +58,7 @@ futex = ["axfeat/futex"]
 
 # Network
 ip = ["axnet/ip"]
-net = ["ip", "arceos_api/net", "axfeat/net", "dep:axsync"]
+net = ["dep:axnet", "arceos_api/net", "axfeat/net", "dep:axsync"]
 
 # Logging
 log-level-off = ["axfeat/log-level-off"]
